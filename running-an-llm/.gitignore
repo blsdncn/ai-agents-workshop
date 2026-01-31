@@ -1,0 +1,19 @@
+# Ignore evaluation artifacts but keep directory placeholders
+Results/images/*
+!Results/images/.gitkeep
+
+Results/evals/*
+!Results/evals/.gitkeep
+
+Results/logs/*
+!Results/logs/.gitkeep
+
+# Python caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+.venv
+AGENTS.md
+.env
+*Zone.Identifier

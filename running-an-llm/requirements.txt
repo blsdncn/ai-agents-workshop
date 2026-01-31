@@ -1,0 +1,9 @@
+torch
+transformers
+datasets
+tqdm
+accelerate
+huggingface_hub
+matplotlib
+numpy
+bitsandbytes  # optional, required for quantization
