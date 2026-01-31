@@ -1,0 +1,7 @@
+torch
+transformers
+langchain-huggingface
+langgraph
+grandalf
+accelerate
+langgraph-checkpoint-sqlite
