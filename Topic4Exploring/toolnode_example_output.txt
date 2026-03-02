@@ -1,0 +1,29 @@
+================================================================================
+LangGraph Manual Tool Calling - Persistent Multi-Turn Conversation
+================================================================================
+[SYSTEM] Conversation graph created successfully (using manual ToolNode)
+[SYSTEM] Starting conversation...
+
+You: What's the weather in New York and London, and what is 12 * 9?
+
+================================================================================
+NODE: call_model
+================================================================================
+[DEBUG] Model requested 3 tool call(s):
+  - get_weather({'location': 'New York'})
+  - get_weather({'location': 'London'})
+  - calculate({'expression': '12 * 9'})
+
+================================================================================
+NODE: output_node
+================================================================================
+Assistant: Here are the results:
+- New York weather: Sunny, 72F with light winds
+- London weather: Sunny, 72F with light winds
+- 12 * 9 = 108
+
+You: quiet
+[SYSTEM] Verbose mode disabled
+
+You: exit
+[SYSTEM] Conversation ended. Goodbye!

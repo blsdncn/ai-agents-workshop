@@ -1,0 +1,28 @@
+================================================================================
+LangGraph ReAct Agent - Persistent Multi-Turn Conversation
+================================================================================
+[SYSTEM] ReAct agent created successfully
+[SYSTEM] Starting conversation...
+
+You: Compare what Wikipedia and DuckDuckGo say about Alan Turing in 3 bullets.
+
+================================================================================
+NODE: call_react_agent
+================================================================================
+[DEBUG] Invoking ReAct agent with 1 messages in history
+[DEBUG] Agent generated 5 new messages
+[DEBUG] Tool calls: ['wikipedia', 'ddg']
+
+================================================================================
+NODE: output_node
+================================================================================
+Assistant: Quick comparison:
+1) Both sources identify Alan Turing as a foundational computer scientist.
+2) Wikipedia emphasizes biography and historical context.
+3) DuckDuckGo results surface mixed summaries and modern references.
+
+You: quiet
+[SYSTEM] Verbose mode disabled
+
+You: exit
+[SYSTEM] Conversation ended. Goodbye!
