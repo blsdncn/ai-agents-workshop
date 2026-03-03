@@ -9,18 +9,21 @@ This program demonstrates a LangGraph application using create_react_agent with:
 """
 
 import asyncio
+import json
 import random
 import time
 from typing import TypedDict, Annotated, Sequence, Literal
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage
+from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import create_react_agent
 from langgraph.graph.message import add_messages
-from langchain_community.tools import DuckDuckGoSearchRun, DuckDuckGoSearchResults
+from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
+from pydantic import BaseModel, Field
 
 # ============================================================================
 # STATE DEFINITION
@@ -55,6 +58,41 @@ try:
 except Exception as e:
     print("Error creating shared resources.")
     raise e
+
+
+class SourceComparison(BaseModel):
+    """Structured comparison between Wikipedia and DuckDuckGo results."""
+
+    topic: str = Field(description="The original query topic.")
+    wikipedia_summary: str = Field(
+        description="A concise summary derived from Wikipedia output."
+    )
+    duckduckgo_summary: str = Field(
+        description="A concise summary derived from DuckDuckGo output."
+    )
+    overlap: list[str] = Field(description="Facts both sources appear to agree on.")
+    differences: list[str] = Field(
+        description="Differences, caveats, or source-specific details."
+    )
+    combined_takeaway: str = Field(description="One short synthesized takeaway.")
+
+
+_structured_response_agent = None
+
+
+def _get_structured_response_agent():
+    global _structured_response_agent
+    if _structured_response_agent is None:
+        _structured_response_agent = create_agent(
+            model="gpt-4o-mini",
+            tools=[],
+            response_format=SourceComparison,
+            system_prompt=(
+                "You produce concise, faithful structured comparisons. "
+                "Use only the provided source snippets and do not invent facts."
+            ),
+        )
+    return _structured_response_agent
 
 
 # -- Tools --
@@ -151,8 +189,56 @@ def wikipedia(query: str) -> str:
         return f"Error using Wikipedia: {e}"
 
 
+@tool
+def compare_wikipedia_duckduckgo(query: str) -> str:
+    """
+    Combine Wikipedia + DuckDuckGo into a structured JSON response.
+
+    Args:
+        query: Topic to look up in both sources.
+
+    Returns:
+        JSON-formatted structured comparison.
+    """
+    try:
+        wikipedia_result = wiki.run(query)
+        ddg_result = ddg_search.invoke(query)
+
+        formatter_agent = _get_structured_response_agent()
+        formatted = formatter_agent.invoke(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Topic: {query}\n\n"
+                            "Wikipedia result:\n"
+                            f"{wikipedia_result[:3500]}\n\n"
+                            "DuckDuckGo result:\n"
+                            f"{ddg_result[:3500]}"
+                        ),
+                    }
+                ]
+            }
+        )
+
+        structured = formatted["structured_response"]
+        if hasattr(structured, "model_dump_json"):
+            return structured.model_dump_json(indent=2)
+        return json.dumps(structured, indent=2)
+    except Exception as e:
+        return f"Error generating structured comparison: {e}"
+
+
 # List of all available tools
-tools = [get_weather, get_population, calculate, ddg, wikipedia]
+tools = [
+    get_weather,
+    get_population,
+    calculate,
+    ddg,
+    wikipedia,
+    compare_wikipedia_duckduckgo,
+]
 
 
 # ============================================================================
@@ -435,7 +521,9 @@ def create_conversation_graph():
     system_message = (
         "You are a helpful assistant. "
         "If a tool is able to solve a problem you are working on then "
-        "always use it, even if you are able to solve it without using a tool."
+        "always use it, even if you are able to solve it without using a tool. "
+        "If the user asks to compare or synthesize Wikipedia and DuckDuckGo, "
+        "prefer compare_wikipedia_duckduckgo."
     )
 
     # Create the ReAct agent using the built-in function
@@ -550,6 +638,9 @@ async def main():
     print("  - get_weather(location): Get weather information")
     print("  - get_population(city): Get population data")
     print("  - calculate(expression): Evaluate math expressions")
+    print("  - wikipedia(query): Query Wikipedia")
+    print("  - ddg(query): Query DuckDuckGo")
+    print("  - compare_wikipedia_duckduckgo(query): Structured source comparison")
     print("=" * 80)
 
     # Create the conversation graph

@@ -8,7 +8,7 @@ This directory captures my Topic 4 work on comparing `ToolNode` and `create_reac
 - [Environment and Setup](#environment-and-setup)
 - [Part 1: ToolNode vs ReAct Analysis](#part-1-toolnode-vs-react-analysis)
 - [Part 2: 2-Hour Agent Project (Wikipedia + DuckDuckGo)](#part-2-2-hour-agent-project-wikipedia--duckduckgo)
-- [Mermaid Graphs](#mermaid-graphs)
+- [Graphs](#graphs)
 - [Example Terminal Outputs](#example-terminal-outputs)
 - [How to Run](#how-to-run)
 - [Project Structure](#project-structure)
@@ -100,56 +100,45 @@ I implemented Option 1 from the assignment prompt: a research assistant that can
 
 File: `main.py`
 
-- Added a persistent conversation graph that loops in-graph (no Python while-loop).
-- Added tools for:
-  - `wikipedia(query)`
-  - `ddg(query)`
-  - `get_weather(location)`
-  - `get_population(city)`
-  - `calculate(expression)`
-- Added command-based control (`verbose`, `quiet`, `exit`).
-- Added automatic history trimming after 100 messages.
-- Added graph image generation for the conversation wrapper and ReAct internals.
+- Added `wikipedia(query)` and `ddg(query)` into the ReAct toolset so the agent can pull from both sources.
+- Added `compare_wikipedia_duckduckgo(query)` as a simple structured-output feature that combines both sources and returns JSON.
+- Kept the rest of the runtime scaffolding from starter code and limited project-specific changes to source-retrieval + synthesis behavior.
+
+### Structured output component
+
+I added a small schema-driven formatter using LangChain `create_agent(..., response_format=SourceComparison)` and wrapped it in a tool:
+
+- Tool name: `compare_wikipedia_duckduckgo`
+- Input: topic/query string
+- Internal flow:
+  1. fetch Wikipedia result
+  2. fetch DuckDuckGo result
+  3. produce validated structured response with fields like `overlap`, `differences`, and `combined_takeaway`
+- Output: JSON string returned to the calling ReAct agent
 
 ### Why this demonstrates Topic 4 goals
 
-- It shows abstraction with `create_react_agent` while still using explicit graph nodes for conversation lifecycle.
-- It demonstrates multi-tool composition across different backends.
-- It keeps stateful behavior clean through typed graph state and controlled routing.
+- It demonstrates multi-tool composition across Wikipedia and DuckDuckGo.
+- It adds a concrete synthesis step instead of returning raw retrieval output.
+- It keeps the implementation minimal and focused on the assignment's intended project scope.
 
-## Mermaid Graphs
+## Graphs
 
-### ToolNode-style graph
+### ToolNode wrapper graph
 
-```mermaid
-flowchart TD
-    INPUT[input] --> CHECK{route_after_input}
-    CHECK -->|call_model| MODEL[call_model]
-    CHECK -->|input| INPUT
-    CHECK -->|end| END((END))
-    MODEL --> NEEDTOOLS{route_after_model}
-    NEEDTOOLS -->|tools| TOOLS[ToolNode]
-    TOOLS --> MODEL
-    NEEDTOOLS -->|output| OUTPUT[output]
-    OUTPUT --> TRIM[trim_history]
-    TRIM --> INPUT
-```
+![ToolNode graph](langchain_manual_tool_graph.png)
 
 ### ReAct wrapper graph
 
-```mermaid
-flowchart TD
-    INPUT[input] --> CHECK{route_after_input}
-    CHECK -->|call_react_agent| REACT[call_react_agent]
-    CHECK -->|input| INPUT
-    CHECK -->|end| END((END))
-    REACT --> OUTPUT[output]
-    OUTPUT --> TRIM[trim_history]
-    TRIM --> INPUT
-```
+![ReAct wrapper graph](langchain_conversation_graph.png)
+
+### ReAct internal graph
+
+![ReAct graph](langchain_react_agent.png)
 
 Generated diagrams in this folder:
 
+- `langchain_manual_tool_graph.png`
 - `langchain_react_agent.png`
 - `langchain_conversation_graph.png`
 
@@ -160,6 +149,7 @@ I saved representative run traces in:
 - `toolnode_example_output.txt`
 - `react_agent_example_output.txt`
 - `main_project_output.txt`
+- `wiki_ddg_output.txt` (structured output example using `compare_wikipedia_duckduckgo`)
 
 ## How to Run
 
@@ -187,11 +177,13 @@ uv run main.py
 - `toolnode_example.py`: manual model + `ToolNode` conversation graph
 - `react_agent_example.py`: prebuilt ReAct agent wrapped in persistent conversation graph
 - `main.py`: final project variant with Wikipedia + DuckDuckGo and additional tools
+- `langchain_manual_tool_graph.png`: manual ToolNode graph export
 - `langchain_react_agent.png`: internal ReAct graph export
 - `langchain_conversation_graph.png`: wrapper conversation graph export
 - `toolnode_example_output.txt`: ToolNode run transcript excerpt
 - `react_agent_example_output.txt`: ReAct run transcript excerpt
 - `main_project_output.txt`: project run transcript excerpt
+- `wiki_ddg_output.txt`: structured comparison output example (Wikipedia + DuckDuckGo)
 
 ## Conclusion
 
