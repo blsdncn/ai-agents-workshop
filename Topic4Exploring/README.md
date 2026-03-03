@@ -173,7 +173,6 @@ uv run main.py
 
 ## Project Structure
 
-- `topic4_assignment_dump.txt`: assignment text dump used as implementation checklist
 - `toolnode_example.py`: manual model + `ToolNode` conversation graph
 - `react_agent_example.py`: prebuilt ReAct agent wrapped in persistent conversation graph
 - `main.py`: final project variant with Wikipedia + DuckDuckGo and additional tools
