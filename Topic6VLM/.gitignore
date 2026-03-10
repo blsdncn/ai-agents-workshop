@@ -29,3 +29,5 @@ htmlcov/
 
 # Assignment materials not for submission
 AssignmentContentDump/
+session-*
+.ipynb*

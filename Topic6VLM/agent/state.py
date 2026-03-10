@@ -29,7 +29,7 @@ class AgentState(TypedDict):
     pending_user_text: str | None
     pending_image_paths: list[str]
     pending_image_b64: list[str]
-    last_model_text: str | None
+    last_model_message: AIMessage | None
     error: str | None
 
 
@@ -54,6 +54,6 @@ def initial_state() -> AgentState:
         "pending_user_text": None,
         "pending_image_paths": [],
         "pending_image_b64": [],
-        "last_model_text": None,
+        "last_model_message": None,
         "error": None,
     }

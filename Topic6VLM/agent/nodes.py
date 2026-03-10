@@ -41,7 +41,7 @@ def ingest_user_turn(state: AgentState) -> dict[str, Any]:
         if text_normalized.strip() == "":
             text_normalized = None
 
-    image_paths = state.get("pending_image_paths")
+    image_paths = state.get("pending_image_paths") or []
     paths_resolved: list[str] = []
     for path in image_paths:
         path_resolved = Path(path).resolve()
@@ -65,7 +65,7 @@ def prepare_images_for_turn(state: AgentState) -> dict[str, Any]:
     """
     imgs_b64: list[str] = []
 
-    img_paths = state.get("pending_image_paths")
+    img_paths = state.get("pending_image_paths") or []
     for path in img_paths:
         img = cv2.imread(path)
         if img is None:
@@ -108,17 +108,28 @@ def call_vlm(state: AgentState, settings: OllamaSettings) -> dict[str, Any]:
 
     TODO(technique):
     - Send full `messages` history to Ollama.
-    - Append assistant output to `messages` and mirror into `last_model_text`.
+    - Append assistant output to `messages` and mirror into `last_model_message`.
     """
     outMessage: AIMessage = chat_with_llava(state.get("messages") or [], settings)
-    return {"messages": outMessage}
+    return {"messages": outMessage, "last_model_message": outMessage}
 
 
 def route_after_ingest(state: AgentState) -> str:
     """Route based on whether this turn includes image uploads."""
+    if state.get("error"):
+        return "error"
     if len(state.get("pending_image_paths", [])) == 0:
         return "append_user_message"
     return "prepare_images_for_turn"
+
+
+def handle_error(state: AgentState) -> dict[str, Any]:
+    print(f"Error: {state.get('error')}")
+    return {"last_model_message": None}
+
+
+def route_on_error(state: AgentState) -> str:
+    return "error" if state.get("error") else "ok"
 
 
 def clear_turn_buffers(state: AgentState) -> dict[str, Any]:
@@ -132,4 +143,5 @@ def clear_turn_buffers(state: AgentState) -> dict[str, Any]:
         "pending_user_text": None,
         "pending_image_paths": [],
         "pending_image_b64": [],
+        "error": None,
     }
