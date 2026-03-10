@@ -1,10 +1,14 @@
 # Topic 6 VLM
 
-This folder currently focuses on part 1 of Topic 6: a multi-turn, multi-image chatbot built with Gradio, LangGraph, and Ollama.
+This folder now contains:
+- Part 1: a multi-turn, multi-image chatbot built with Gradio, LangGraph, and Ollama
+- Part 2: a standalone video surveillance analyzer that samples video frames and uses LLaVA to detect when a person enters and exits the scene
 
 ## Current Status
 
 The main working path right now is `gradio_quickstart.py`.
+
+![Gradio chatbot interface](gradio-llava-chatbot-screenshot.png)
 
 What is implemented so far:
 - a Gradio chat UI using `gr.ChatInterface` and `gr.MultimodalTextbox`
@@ -17,7 +21,7 @@ What is still rough or unfinished:
 - `main.py` and `agent/ui.py` are still scaffold files and are not the real app entry path
 - error handling is minimal
 - the graph test script needs updating for the checkpointed graph config
-- this README documents part 1 only
+- Part 2 is currently a batch script, not a UI app
 
 ## Part 1 Behavior
 
@@ -72,10 +76,51 @@ uv run python gradio_quickstart.py
 
 By default, Ollama is expected at `http://localhost:11434`. You can override that with `OLLAMA_HOST`.
 
+## Part 2
+
+The standalone Part 2 script is `llava_video_surveillance.py`.
+
+What it does:
+- opens a local video file with OpenCV
+- samples one frame every 2 seconds by default
+- downscales large frames before inference
+- asks LLaVA whether a person is present in each sampled frame
+- reports enter and exit timestamps based on presence transitions
+
+Example:
+
+```bash
+uv run python llava_video_surveillance.py path/to/video.mp4 --verbose
+```
+
+Optional flags:
+- `--sample-seconds 2.0`
+- `--max-dimension 720`
+- `--model llava`
+
+## Part 2 Evaluation Notes
+
+The sample-video evaluation artifacts live in `analysis/video_eval/`.
+
+- close-scene grid: `analysis/video_eval/sample-video-close-confusion-grid.png`
+- far-scene grid: `analysis/video_eval/sample-video-far-confusion-grid.png`
+- report: `analysis/video_eval/report.md`
+
+![Close scene evaluation grid](analysis/video_eval/sample-video-close-confusion-grid.png)
+
+![Far scene evaluation grid](analysis/video_eval/sample-video-far-confusion-grid.png)
+
+What the evaluation suggests:
+- the close and far videos both show noisy predictions around transition windows rather than clean single enter/exit pairs
+- the far-camera setup is much harder for the current detector than the close-camera setup
+- a noisy background plus frame downscaling can remove detail that a small local vision model needs to reliably distinguish a real person from clutter or partial motion
+- this combination can lead to both false positives in busy intervals and false negatives when the person is small, distant, or only partially visible
+- the exported grids make that tradeoff visible by showing representative TP, FP, TN, and FN frames for each sample video
+
 ## Notes And Limits
 
 - The app seeds `initial_state()` on the first turn of a Gradio session, then relies on LangGraph checkpoint state for later turns.
-- The current implementation uses LangChain message objects instead of a custom raw Ollama message-dict layer.
+- The current implementation uses LangChain message objects instead of a custom raw Ollama message-dict layer for easier interfacing with LangChain's `ChatOllama` wrapper.
 
 ## Not Yet Done
 
@@ -83,4 +128,4 @@ By default, Ollama is expected at `http://localhost:11434`. You can override tha
 - polished user-facing error messages
 - a finished `main.py` launch path
 - a finished `agent/ui.py` app (currently launches and manages ui via gradio_quickstart)
-- Part 2
+- optional Part 2 features like webcam mode and animal counting
