@@ -1,0 +1,3 @@
+[submodule "Topic7MCP"]
+	path = Topic7MCP
+	url = git@github.com:blsdncn/topic7mcp.git
